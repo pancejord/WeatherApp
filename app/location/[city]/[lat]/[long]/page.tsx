@@ -1,8 +1,13 @@
-import React from 'react';
 import { getClient } from '@/apollo-client';
 import typeDefs from '@/graphql/queries/typeDefs';
-import CalloutCard from '@/components/CalloutCard';
-import StatCard from '@/components/StatCard';
+import {
+  CalloutCard,
+  StatCard,
+  InformationPanel,
+  TempChart,
+  RainChart,
+  HumidityChart,
+} from '@/components';
 
 type Props = {
   params: {
@@ -12,51 +17,81 @@ type Props = {
   };
 };
 
-async function WeatherPage({ params: { lat, long } }: Props) {
-
+const WeatherPage = async ({ params: { city, lat, long } }: Props) => {
   const client = getClient();
+  const {
+    data: { myQuery: result },
+  } = await client.query<QueryResult>({
+    query: typeDefs,
+    variables: {
+      current_weather: 'true',
+      longitude: long,
+      latitude: lat,
+      timezone: 'GMT',
+    },
+  });
 
-  try {
-    const { data } = await client.query({
-      query: typeDefs,
-      variables: {
-        current_weather: "true",
-        longitude: long,
-        latitude: lat,
-        timezone: "EST"
-      }
-    });
-
-    const results = data.myQuery;
-
-    console.log(results);
-
-    return (
-      <div>
-        <div className='p-5'>
+  return (
+    <div className='flex flex-col min-h-screen md:flex-row'>
+      <InformationPanel city={city} lat={lat} long={long} result={result} />
+      <div className='flex-1 p-5 lg:p-10'>
+        <div className='p-4'>
           <div className='pb-5'>
-            <h2 className='text-xl font-bold'>Today's Overview</h2>
+            <h2 className='text-xl font-bold'>Todays Overview</h2>
             <p className='text-sm text-gray-400'>
-              Last Updated At: {new Date(results.current_weather.time).toLocaleString()} ({results.timezone})
+              Last Updated at:{' '}
+              {new Date(result.current_weather.time).toLocaleString()} (
+              {result.timezone})
             </p>
           </div>
-          <div><CalloutCard message='This is where GPT-4 Will GO!' /></div>
-          {results.daily && results.daily.temperature_2m_max && results.daily.temperature_2m_max[0] !== undefined ? (
-            <div><StatCard title='Maximum Temperature' metric={`${results.daily.temperature_2m_max[0].toFixed(1)}°`} color='yellow' /></div>
-          ) : (
-            <div>Loading temperature data...</div>
-          )}
+          <div className='grid grid-cols-1 xl:grid-cols-2 gap-5 m-2'>
+            <StatCard
+              title='Maximum Tempurature'
+              metric={`${result.daily.temperature_2m_max[0].toFixed(1)}°`}
+              color='rose'
+            />
+
+            <StatCard
+              title='Minimum Temperature'
+              metric={`${result.daily.temperature_2m_min[0].toFixed(1)}°`}
+              color='rose'
+            />
+            <div>
+              <StatCard
+                title='UV Index'
+                metric={result.daily.uv_index_max[0].toFixed(1)}
+                color='rose'
+              />
+              {Number(result.daily.uv_index_max[0].toFixed(1)) > 5 && (
+                <CalloutCard
+                  message='High UV Index. Please wear sunscreen.'
+                  warning
+                />
+              )}
+            </div>
+            <div className='flex space-x-3'>
+              <StatCard
+                title='Wind Speed'
+                metric={`${result.current_weather.windspeed.toFixed(1)}m/s`}
+                color='rose'
+              />
+              <StatCard
+                title='Wind Direction'
+                metric={`${result.current_weather.winddirection.toFixed(1)}°`}
+                color='rose'
+              />
+            </div>
+          </div>
+        </div>
+        <hr className='mb-5' />
+        <div className='space-y-3'>
+          <TempChart result={result} />
+          <RainChart result={result} />
+          <HumidityChart result={result} />
         </div>
       </div>
-    );
-  } catch (error) {
-    console.error('Error fetching weather data:', error);
-    return (
-      <div>
-        <p>Error fetching weather data. Please try again later.</p>
-      </div>
-    );
-  }
-}
+    </div>
+  );
+};
 
 export default WeatherPage;

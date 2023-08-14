@@ -62,7 +62,8 @@ const options = Country.getAllCountries().map((country) => ({
         <Select 
         value={selectedCountry}
         onChange={handleSelectedCountry}
-        options={options}/>
+        options={options}
+/>
         </div>
 
         {selectedCountry && (

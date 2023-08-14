@@ -1,8 +1,12 @@
 /** @type {import('next').NextConfig} */
 const nextConfig = {
     experimental: {
-        serverComponentsExternalPackage: ['@tremor/react'],
-    }
-}
-
-module.exports = nextConfig
+      appDir: true,
+      serverComponentsExternalPackages: ['@tremor/react'],
+    },
+    images: {
+      domains: ['www.weatherbit.io'],
+    },
+  };
+  
+  module.exports = nextConfig;
